@@ -553,7 +553,7 @@
         <h1>Selamat Datang di <span>Sales</span></h1>
         <p>Kelola data produk pelumas, buat penawaran profesional, dan hitung komisi sales dalam satu aplikasi modern.</p>
         <div class="actions">
-          <button class="btn btn-accent" data-go="product">🛢️ Lihat Produk</button>
+          <button class="btn btn-accent" data-go="pricelist">🏷️ Lihat Daftar Harga</button>
           <button class="btn btn-ghost" data-go="quotation" style="color:#fff;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)">📄 Buat Penawaran</button>
         </div>
         <div class="stat">⚡ <span id="liveTime">Memuat waktu...</span></div>
@@ -1241,7 +1241,9 @@ const load = () => {
   try { state.commissions = JSON.parse(localStorage.getItem(LS.commissions) || '[]') } catch(e){state.commissions=[]}
   try { state.priceHistory = JSON.parse(localStorage.getItem('sal_price_history') || '[]') } catch(e){state.priceHistory=[]}
   try { state.settings = JSON.parse(localStorage.getItem('sal_settings') || 'null') } catch(e){state.settings=null}
-  if (!state.settings) state.settings = { pinProd: true, pinDel: true, dark: false };
+  if (!state.settings) state.settings = { pinProd: true, pinDel: true };
+  // dark mode PER DEVICE (tidak ikut sync cloud)
+  try { state.dark = localStorage.getItem('sal_dark') === '1'; } catch(e){ state.dark = false; }
   try {
     const savedQ = JSON.parse(localStorage.getItem('sal_quotation_current_v1') || 'null');
     if (savedQ){
@@ -1325,10 +1327,10 @@ function renderColl(coll){
 }
 function applyCollData(coll, data, fromCloud, cloudCt){
   if (coll === 'settings'){
-    if (data && typeof data === 'object') state.settings = Object.assign({ pinProd:true, pinDel:true, dark:false }, data);
+    if (data && typeof data === 'object') state.settings = Object.assign({ pinProd:true, pinDel:true }, data);
     if (fromCloud){ persistLocal('settings'); if (cloudCt) lastCloud.settings = cloudCt; }
     else saveSettings();
-    applySettingsUI();
+    applySettingsUI(); // dark tetap per device, tidak ikut cloud
     return;
   }
   if (!Array.isArray(data)) return;
@@ -1443,15 +1445,18 @@ const toast = (msg, type='good') => {
 /* ===================== PENGATURAN ===================== */
 function applySettingsUI(){
   const sp = $('#setPinProd'), sd = $('#setPinDel'), dk = $('#setDark');
-  if (sp) sp.checked = !!state.settings.pinProd;
-  if (sd) sd.checked = !!state.settings.pinDel;
-  if (dk) dk.checked = !!state.settings.dark;
-  document.body.classList.toggle('dark', !!state.settings.dark);
+  if (sp) sp.checked = !!(state.settings && state.settings.pinProd);
+  if (sd) sd.checked = !!(state.settings && state.settings.pinDel);
+  if (dk) dk.checked = !!state.dark;
+  document.body.classList.toggle('dark', !!state.dark);
 }
 $('#btnSettings')?.addEventListener?.('click', () => {
-  applySettingsUI();
-  $('#settingsModal').classList.add('show');
-  document.body.style.overflow = 'hidden';
+  // Masuk pengaturan selalu wajib PIN
+  showPinOverlay(() => {
+    applySettingsUI();
+    $('#settingsModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  });
 });
 $('#settingsClose')?.addEventListener?.('click', () => {
   $('#settingsModal').classList.remove('show');
@@ -1459,7 +1464,11 @@ $('#settingsClose')?.addEventListener?.('click', () => {
 });
 $('#setPinProd')?.addEventListener?.('change', e => { state.settings.pinProd = e.target.checked; saveSettings(); });
 $('#setPinDel')?.addEventListener?.('change', e => { state.settings.pinDel = e.target.checked; saveSettings(); });
-$('#setDark')?.addEventListener?.('change', e => { state.settings.dark = e.target.checked; saveSettings(); });
+$('#setDark')?.addEventListener?.('change', e => {
+  state.dark = e.target.checked;
+  try { localStorage.setItem('sal_dark', state.dark ? '1' : '0'); } catch(err){}
+  applySettingsUI();
+});
 
 /* ===================== PIN PROTEKSI MENU PRODUK ===================== */
 const APP_PIN = '1990';
