@@ -1299,21 +1299,55 @@ function getCollData(coll){
   }
   return null;
 }
-function applyCollData(coll, data){
+// lastCloud: waktu cloud terakhir yang sudah diterapkan (cegah loop / re-apply sendiri)
+const lastCloud = {};
+function persistLocal(coll){
+  // simpan ke localStorage TANPA push ke cloud (dipakai saat data datang dari cloud)
+  switch(coll){
+    case 'products': save(LS.products, state.products); break;
+    case 'customers': localStorage.setItem('sal_customers_version', CUSTOMER_DATA_VERSION); save(LS.customers, state.customers); break;
+    case 'owners': localStorage.setItem('sal_owners_version', OWNER_DATA_VERSION); save(LS.owners, state.owners); break;
+    case 'quotations': save(LS.quotations, state.quotations); break;
+    case 'commissions': save(LS.commissions, state.commissions); break;
+    case 'priceHistory': localStorage.setItem('sal_price_history', JSON.stringify(state.priceHistory)); break;
+    case 'settings': localStorage.setItem('sal_settings', JSON.stringify(state.settings)); break;
+  }
+}
+function renderColl(coll){
+  switch(coll){
+    case 'products': renderProducts(); updateKPI(); break;
+    case 'customers': renderCustomers(); renderCustomerSelect(); break;
+    case 'owners': renderOwners(); renderOwnerSelectForQuot(); updateSidebarBrand(); break;
+    case 'quotations': renderQuotationList(); updateKPI(); break;
+    case 'commissions': updateKPI(); break;
+    case 'priceHistory': if (state.currentPTab === 'riwayat') renderHistory(); break;
+    case 'settings': applySettingsUI(); break;
+  }
+}
+function applyCollData(coll, data, fromCloud, cloudCt){
   if (coll === 'settings'){
     if (data && typeof data === 'object') state.settings = Object.assign({ pinProd:true, pinDel:true, dark:false }, data);
-    saveSettings();
+    if (fromCloud){ persistLocal('settings'); if (cloudCt) lastCloud.settings = cloudCt; }
+    else saveSettings();
+    applySettingsUI();
     return;
   }
   if (!Array.isArray(data)) return;
   switch(coll){
-    case 'products': state.products = data; saveProducts(); renderProducts(); updateKPI(); break;
-    case 'customers': state.customers = data; saveCustomers(); renderCustomers(); renderCustomerSelect(); break;
-    case 'owners': state.owners = data; saveOwners(); renderOwners(); renderOwnerSelectForQuot(); updateSidebarBrand(); break;
-    case 'quotations': state.quotations = data; saveQuots(); renderQuotationList(); updateKPI(); break;
-    case 'commissions': state.commissions = data; saveComm(); updateKPI(); break;
-    case 'priceHistory': state.priceHistory = data; savePriceHistory(); if (state.currentPTab === 'riwayat') renderHistory(); break;
+    case 'products': state.products = data; break;
+    case 'customers': state.customers = data; break;
+    case 'owners': state.owners = data; break;
+    case 'quotations': state.quotations = data; break;
+    case 'commissions': state.commissions = data; break;
+    case 'priceHistory': state.priceHistory = data; break;
   }
+  if (fromCloud){
+    persistLocal(coll);
+    if (cloudCt) lastCloud[coll] = cloudCt;
+  } else {
+    setLocalMeta(coll); syncPush(coll);
+  }
+  renderColl(coll);
 }
 
 let pushTimers = {};
@@ -1341,7 +1375,7 @@ function syncPullAll(){
           const cloud = doc.data() || {};
           const ct = cloud.updatedAt ? (cloud.updatedAt.toDate ? cloud.updatedAt.toDate().getTime() : 0) : 0;
           const lt = getLocalMeta(coll);
-          if (ct > lt) applyCollData(coll, cloud.data);
+          if (ct > lt) applyCollData(coll, cloud.data, true, ct);
           else if (lt > ct && lt > 0) syncPush(coll);
         } else {
           syncPush(coll); // cloud kosong -> dorong data lokal
@@ -1349,6 +1383,23 @@ function syncPullAll(){
       }).catch(e => console.warn('[SYNC] pull', coll, 'gagal:', e.message));
     } catch (e) { console.warn('[SYNC] pull', coll, 'err:', e.message); return Promise.resolve(); }
   }));
+}
+// REAL-TIME: dengarkan perubahan dari device lain (auto-update tanpa refresh)
+let realtimeOn = false;
+function syncListen(){
+  if (!firebaseOk || realtimeOn) return;
+  realtimeOn = true;
+  SYNC_COLLS.forEach(coll => {
+    try {
+      db.collection(coll).doc('main').onSnapshot(doc => {
+        if (!doc.exists) return;
+        const cloud = doc.data() || {};
+        const ct = cloud.updatedAt ? (cloud.updatedAt.toDate ? cloud.updatedAt.toDate().getTime() : 0) : 0;
+        const last = lastCloud[coll] || 0;
+        if (ct > last) applyCollData(coll, cloud.data, true, ct);
+      }, e => console.warn('[SYNC] listen', coll, 'err:', e.message));
+    } catch (e) { console.warn('[SYNC] listen', coll, 'err:', e.message); }
+  });
 }
 function updateSyncStatus(){
   const el = $('#syncStatus');
@@ -3607,6 +3658,7 @@ function init(){
     syncPullAll().then(() => {
       syncReady = true;
       SYNC_COLLS.forEach(c => syncPush(c));
+      syncListen(); // mulai real-time setelah pull awal
     });
   }, 800);
   // Tanggal penawaran default = hari ini (kalau belum terisi)

@@ -1,4 +1,4 @@
-const CACHE = 'sal-app-v62';
+const CACHE = 'sal-app-v63';
 self.addEventListener('install', e => {
   self.skipWaiting();
 });
