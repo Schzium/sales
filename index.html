@@ -539,8 +539,7 @@
   <main class="main">
     <div class="topbar">
       <div style="display:flex;align-items:center;gap:10px">
-        <button type="button" class="topbar-home" id="btnSidebarHome" title="Buka menu sidebar">🏠</button>
-        <div class="crumbs" id="crumbs">🏠 <span>Beranda</span> <strong id="crumbTitle">Dasbor</strong></div>
+        <button type="button" class="topbar-home" id="btnSidebarHome" title="Buka menu">☰</button>
       </div>
       <div class="userbox">
         <div class="avatar">SA</div>
@@ -1509,7 +1508,6 @@ const go = (route) => {
     const el = $('#view-'+v);
     if (el) el.classList.toggle('hidden', v!==route);
   });
-  $('#crumbTitle').textContent = ({home:'Dasbor', pricelist:'Daftar Harga', product:'Manajemen Produk', customer:'Manajemen Pelanggan', owner:'Data Perusahaan', quotation:'Buat Penawaran', 'quotation-list':'Daftar Penawaran', commission:'Kalkulator Komisi'})[route];
   if (route==='pricelist') renderPricelist();
   if (route==='product'){
     renderProducts();
@@ -3705,7 +3703,20 @@ $('#btnInstall').addEventListener('click', async () => {
   $('#installHint').style.display = 'none';
 });
 if ('serviceWorker' in navigator){
-  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      // Jika ada versi baru yang menunggu, aktifkan & reload otomatis sekali
+      if (reg.waiting && !navigator.serviceWorker.controller) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    }).catch(()=>{});
+  });
+  let refreshed = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshed) return;
+    refreshed = true;
+    setTimeout(() => location.reload(), 400);
+  });
 }
 </script>
 </body>
