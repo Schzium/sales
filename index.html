@@ -1249,6 +1249,15 @@ const load = () => {
     if (savedQ){
       state.qitems = savedQ.qitems || state.qitems;
       state.terms = savedQ.terms || state.terms;
+      if (savedQ.ownerId) state.currentOwnerId = savedQ.ownerId;
+      const setV = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
+      setV('qfNo', savedQ.no); setV('qfPerihal', savedQ.perihal); setV('qfDate', savedQ.date);
+      setV('qfCust', savedQ.cust); setV('qfUP', savedQ.up); setV('qfAddr', savedQ.addr);
+      setV('qfSubline', savedQ.subline1); setV('qfSubline2', savedQ.subline2); setV('qfSubline3', savedQ.subline3);
+      setV('qfPTName', savedQ.ptName); setV('qfSigner', savedQ.signer); setV('qfPos', savedQ.pos);
+      if (savedQ.custId){ const cs = document.getElementById('qfCustSelect'); if (cs) cs.value = savedQ.custId; }
+      if (savedQ.intro){ const el = document.getElementById('qfIntro'); if (el) el.innerHTML = savedQ.intro; }
+      if (savedQ.closing){ const el = document.getElementById('qfClosing'); if (el) el.innerHTML = savedQ.closing; }
     }
   } catch(e){}
   state.signature = localStorage.getItem('sal_signature') || null;
@@ -1420,7 +1429,17 @@ const saveCustomers = () => { localStorage.setItem('sal_customers_version', CUST
 const saveOwners = () => { localStorage.setItem('sal_owners_version', OWNER_DATA_VERSION); save(LS.owners, state.owners); setLocalMeta('owners'); syncPush('owners'); }
 const saveQuots = () => { save(LS.quotations, state.quotations); setLocalMeta('quotations'); syncPush('quotations'); };
 const saveComm = () => { save(LS.commissions, state.commissions); setLocalMeta('commissions'); syncPush('commissions'); };
-const saveQCurrent = () => save('sal_quotation_current_v1', {qitems: state.qitems, terms: state.terms});
+const saveQCurrent = () => save('sal_quotation_current_v1', {
+  qitems: state.qitems, terms: state.terms,
+  ownerId: state.currentOwnerId,
+  no: $('#qfNo')?.value || '', perihal: $('#qfPerihal')?.value || '',
+  date: $('#qfDate')?.value || '',
+  custId: $('#qfCustSelect')?.value || '', cust: $('#qfCust')?.value || '',
+  up: $('#qfUP')?.value || '', addr: $('#qfAddr')?.value || '',
+  intro: $('#qfIntro')?.innerHTML || '', closing: $('#qfClosing')?.innerHTML || '',
+  subline1: $('#qfSubline')?.value || '', subline2: $('#qfSubline2')?.value || '', subline3: $('#qfSubline3')?.value || '',
+  ptName: $('#qfPTName')?.value || '', signer: $('#qfSigner')?.value || '', pos: $('#qfPos')?.value || ''
+});
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -1653,26 +1672,52 @@ function renderQuotationList(){
 function openQuotationDetail(id){
   const q = state.quotations.find(x => x.id === id);
   if (!q) return;
-  // Isi form dengan data yang disimpan
+  // 1) Restore owner yang dipakai saat penawaran dibuat (jangan default SAL)
+  if (q.ownerId){
+    state.currentOwnerId = q.ownerId;
+    localStorage.setItem('sal_current_owner', q.ownerId);
+    const owner = state.owners.find(o => o.id === q.ownerId);
+    if (owner){ applyOwnerToQuotation(owner); renderOwnerSelectForQuot(); }
+  } else {
+    renderOwnerSelectForQuot();
+  }
+  // 2) Isi form dengan data yang disimpan
   $('#qfNo').value = q.no || '';
   $('#qfPerihal').value = q.perihal || '';
   $('#qfDate').value = q.date || '';
-  // Try to parse "13 Agustus 2026" → ISO for picker
   if (q.date) {
     const parsed = parseIndonesianDate(q.date);
     if (parsed) $('#qfDatePicker').value = parsed.toISOString().slice(0,10);
   }
+  // 3) Customer: restore select + field
+  if (q.custId){
+    const cs = $('#qfCustSelect');
+    if (cs && state.customers.find(c => c.id === q.custId)){
+      cs.value = q.custId;
+      cs.dispatchEvent(new Event('change'));
+    }
+  }
   $('#qfCust').value = q.customer || '';
   $('#qfUP').value = q.up || '';
   $('#qfAddr').value = q.address || '';
+  if ($('#qfAddr').value) autoFitTextarea($('#qfAddr'));
   $('#qfIntro').innerHTML = q.intro || '';
   $('#qfClosing').innerHTML = q.closing || '';
+  // 4) Kop surat yang disimpan (override hasil applyOwner kalau penawaran punya sendiri)
+  if (q.subline1 != null) $('#qfSubline').value = q.subline1;
+  if (q.subline2 != null) $('#qfSubline2').value = q.subline2;
+  if (q.subline3 != null) $('#qfSubline3').value = q.subline3;
+  if (q.ptName) $('#qfPTName').value = q.ptName;
+  if (q.signer) $('#qfSigner').value = q.signer;
+  if (q.pos) $('#qfPos').value = q.pos;
+  // 5) Item & terms
   state.qitems = JSON.parse(JSON.stringify(q.items || []));
   state.terms = JSON.parse(JSON.stringify(q.terms || state.terms));
-  // Tandai ID ini sebagai yang sedang di-edit, supaya Save = update
   state.editingQuotId = q.id;
   renderItemsForm();
   renderTerms();
+  // 6) Simpan draft = penawaran ini (aman utak atik, refresh tidak berubah)
+  saveQCurrent();
   go('quotation');
   toast('Mode edit: ' + (q.no || ''), 'info');
 }
@@ -3074,6 +3119,10 @@ $('#btnSaveQuot').addEventListener('click', () => {
     customer: $('#qfCust').value, up: $('#qfUP').value, address: $('#qfAddr').value,
     intro: $('#qfIntro').innerHTML, closing: $('#qfClosing').innerHTML,
     items: state.qitems, terms: state.terms,
+    ownerId: state.currentOwnerId || null,
+    custId: $('#qfCustSelect')?.value || null,
+    subline1: $('#qfSubline')?.value || '', subline2: $('#qfSubline2')?.value || '', subline3: $('#qfSubline3')?.value || '',
+    ptName: $('#qfPTName')?.value || '', signer: $('#qfSigner')?.value || '', pos: $('#qfPos')?.value || '',
     sub, ppn, total: rupiah(total)
   };
   if (state.editingQuotId){
@@ -3672,24 +3721,40 @@ function init(){
   const _now = new Date();
   if (!$('#qfDatePicker').value) $('#qfDatePicker').value = _now.toISOString().slice(0,10);
   if (!$('#qfDate').value) $('#qfDate').value = todayLong(_now);
-  // Default selection: owner SAL, customer GMP (PT. Gunung Madu Plantation)
-  if (!state.currentOwnerId && state.owners.find(o => o.id === 'o_default_sal')){
-    state.currentOwnerId = 'o_default_sal';
-    localStorage.setItem('sal_current_owner', 'o_default_sal');
-    const o = state.owners.find(x => x.id === 'o_default_sal');
-    if (o) applyOwnerToQuotation(o);
-  }
-  // Default customer selection (auto-fill section 3)
-  const defaultCust = state.customers.find(c => c.id === 'c_gunungmadu');
-  if (defaultCust){
-    $('#qfCustSelect').value = 'c_gunungmadu';
-    // Trigger change event manually
-    $('#qfCustSelect').dispatchEvent(new Event('change'));
-  }
-  // Auto-apply owner saat init
-  if (state.currentOwnerId){
-    const o = state.owners.find(x => x.id === state.currentOwnerId);
-    if (o) applyOwnerToQuotation(o);
+  // PENAWARAN BARU: default owner SAL & customer GMP hanya saat TIDAK ada draft
+  const hasDraft = (() => { try { return !!JSON.parse(localStorage.getItem('sal_quotation_current_v1') || 'null'); } catch(e){ return false; } })();
+  if (!hasDraft){
+    if (!state.currentOwnerId && state.owners.find(o => o.id === 'o_default_sal')){
+      state.currentOwnerId = 'o_default_sal';
+      localStorage.setItem('sal_current_owner', 'o_default_sal');
+      const o = state.owners.find(x => x.id === 'o_default_sal');
+      if (o) applyOwnerToQuotation(o);
+    }
+    // Default customer selection (auto-fill section 3)
+    const defaultCust = state.customers.find(c => c.id === 'c_gunungmadu');
+    if (defaultCust){
+      $('#qfCustSelect').value = 'c_gunungmadu';
+      $('#qfCustSelect').dispatchEvent(new Event('change'));
+    }
+  } else {
+    // ADA DRAFT: restore owner & customer yang tersimpan (bukan default)
+    if (state.currentOwnerId){
+      const o = state.owners.find(x => x.id === state.currentOwnerId);
+      if (o){ applyOwnerToQuotation(o); renderOwnerSelectForQuot(); }
+    }
+    const savedQ = JSON.parse(localStorage.getItem('sal_quotation_current_v1') || 'null');
+    if (savedQ && savedQ.custId){
+      const cs = document.getElementById('qfCustSelect');
+      if (cs && state.customers.find(c => c.id === savedQ.custId)){
+        cs.value = savedQ.custId;
+        cs.dispatchEvent(new Event('change'));
+      }
+    }
+    if (savedQ && savedQ.up && savedQ.addr){
+      // restore UP & addr yang disimpan (handler change di atas menimpa ke default)
+      const upEl = document.getElementById('qfUP'); if (upEl && savedQ.up) upEl.value = savedQ.up;
+      const adEl = document.getElementById('qfAddr'); if (adEl && savedQ.addr){ adEl.value = savedQ.addr; autoFitTextarea(adEl); }
+    }
   }
   calcCommission();
   updateKPI();
