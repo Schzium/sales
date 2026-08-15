@@ -1441,6 +1441,11 @@ const saveQCurrent = () => save('sal_quotation_current_v1', {
   ptName: $('#qfPTName')?.value || '', signer: $('#qfSigner')?.value || '', pos: $('#qfPos')?.value || ''
 });
 
+let INTRO_TEMPLATE = ''; // template paragraf pembuka (placeholder PT_NAME & BRAND)
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 const rupiah = n => 'Rp ' + (Number(n)||0).toLocaleString('id-ID');
@@ -1550,6 +1555,13 @@ const go = (route) => {
     renderCustomerSelect();
     renderTerms();
     renderOwnerSelectForQuot();
+    // Penawaran BARU (tanpa draft & bukan edit): default customer GMP
+    const hasDraft = (() => { try { return !!JSON.parse(localStorage.getItem('sal_quotation_current_v1') || 'null'); } catch(e){ return false; } })();
+    if (!state.editingQuotId && !hasDraft){
+      const gmp = state.customers.find(c => c.id === 'c_gunungmadu');
+      const cs = $('#qfCustSelect');
+      if (gmp && cs){ cs.value = 'c_gunungmadu'; cs.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
   }
   if (route==='quotation-list') renderQuotationList();
   // Auto-expand parent sesuai route (parent route atau sub route)
@@ -1597,6 +1609,8 @@ $$('.nav button.nav-parent').forEach(b => {
 // Klik sub → go to sub route (parent tetap expanded karena handler di go() auto-expand)
 $$('.nav button.nav-sub').forEach(b => {
   b.addEventListener('click', () => {
+    // Klik "Buat Penawaran" = reset ke penawaran baru
+    if (b.dataset.route === 'quotation' && b.dataset.subOf === 'quotation') resetQuotationForm();
     go(b.dataset.route);
   });
 });
@@ -1628,10 +1642,12 @@ function updateKPI(){
 /* Toggle collapse section Penawaran (klik di h4) */
 function initSectionToggles(){
   document.querySelectorAll('#qFormMode .qform-section h4').forEach(h4 => {
-    if (!h4.dataset.section) return; // skip section 5 (no data-section)
+    if (!h4.dataset.section) return;
     h4.addEventListener('click', () => {
       h4.parentElement.classList.toggle('collapsed');
     });
+    // DEFAULT HIDE semua sesi (spoiler tertutup) biar form tidak panjang
+    h4.parentElement.classList.add('collapsed');
   });
 }
 /* ===================== DAFTAR PENAWARAN ===================== */
@@ -2560,10 +2576,14 @@ function applyOwnerToQuotation(o){
       }).catch(() => { $('#qfLogoPreview').src = o.logo; });
     }
   }
-  // 4. Tanda tangan
+  // 4. Tanda tangan — default dari owner, tampil di form & bisa di-upload ganti
   if (o.signature){
     state.signature = o.signature;
     localStorage.setItem('sal_signature', o.signature);
+    const sigImg = $('#qfSigImg');
+    if (sigImg){ sigImg.src = o.signature; sigImg.classList.remove('hidden'); }
+    const ph = $('#qfSigPlaceholder');
+    if (ph) ph.classList.add('hidden');
   }
   // 5. Penandatangan
   if (o.signer) $('#qfSigner').value = o.signer;
@@ -2586,10 +2606,10 @@ function applyOwnerToQuotation(o){
   if (o.email) subline3Parts.push('Email: ' + o.email);
   if (o.web) subline3Parts.push('Web: ' + o.web);
   if (subline3Parts.length) $('#qfSubline3').value = subline3Parts.join(' · ');
-  // 10. Paragraf pembuka: replace placeholder
+  // 10. Paragraf pembuka: selalu dari TEMPLATE + data owner (Beston ≠ SAL)
   const intro = $('#qfIntro');
-  if (intro){
-    let html = intro.innerHTML;
+  if (intro && INTRO_TEMPLATE){
+    let html = INTRO_TEMPLATE;
     html = html.replace(/\{\{PT_NAME\}\}/g, escHTML(o.name));
     html = html.replace(/\{\{BRAND\}\}/g, escHTML(o.brandDagang || o.brand || ''));
     intro.innerHTML = html;
@@ -3076,21 +3096,49 @@ function openDatePicker(){
   p.focus();
 }
 
+function resetQuotationForm(){
+  // Reset total ke penawaran BARU (default SAL + GMP + today + daftar kosong)
+  state.qitems = [];
+  state.terms = [...SAMPLE_TERMS];
+  state.editingQuotId = null;
+  try { localStorage.removeItem('sal_quotation_current_v1'); } catch(e){}
+  // Owner default SAL
+  const sal = state.owners.find(o => o.id === 'o_default_sal');
+  if (sal){
+    state.currentOwnerId = 'o_default_sal';
+    localStorage.setItem('sal_current_owner', 'o_default_sal');
+    applyOwnerToQuotation(sal);
+    renderOwnerSelectForQuot();
+  }
+  // Customer default GMP
+  const gmp = state.customers.find(c => c.id === 'c_gunungmadu');
+  if (gmp){
+    const cs = $('#qfCustSelect');
+    if (cs){
+      // isi options kalau kosong, lalu set & trigger
+      if (!cs.options.length){
+        cs.innerHTML = '<option value="">— Pilih —</option>' + state.customers.map(c => '<option value="'+c.id+'">'+c.name+'</option>').join('');
+      }
+      cs.value = 'c_gunungmadu';
+      cs.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  } else {
+    $('#qfCust').value = ''; $('#qfAddr').value = ''; $('#qfUP').value = '';
+  }
+  // Tanggal HARI INI (waktu lokal)
+  const t = new Date();
+  $('#qfDatePicker').value = todayISO();
+  $('#qfDate').value = todayLong(t);
+  // No surat otomatis
+  $('#qfNo').value = 'SAL/Q/' + t.getFullYear() + '/' + String(state.quotations.length + 1).padStart(3,'0');
+  $('#qfPerihal').value = 'Penawaran Harga Pelumas Industri';
+  renderItemsForm(); renderTerms();
+  // JANGAN saveQCurrent di sini — biar dianggap penawaran baru (tanpa draft)
+  toast('Penawaran baru siap','info');
+}
 $('#btnNewQuot').addEventListener('click', () => {
   if (state.qitems.length && !confirm('Buat penawaran baru? Data saat ini akan diganti.')) return;
-  state.qitems = [
-    { prodId:'', cat:'oil', code:'BESTON SM 290', name:'Sugar Mill', note:'', visc:'', unit:'Drum 200L', qty:1, disc:0, price:87500 }
-  ];
-  state.terms = [...SAMPLE_TERMS];
-  $('#qfNo').value = 'SAL/Q/' + new Date().getFullYear() + '/' + String(state.quotations.length + 1).padStart(3,'0');
-  const today = new Date();
-  const isoDate = today.toISOString().slice(0,10);
-  $('#qfDatePicker').value = isoDate;
-  const display = todayLong(today);
-  $('#qfDate').value = display;
-  renderItemsForm(); renderTerms();
-  saveQCurrent();
-  toast('Penawaran baru siap','info');
+  resetQuotationForm();
 });
 
 const SAMPLE_TERMS = [
@@ -3632,6 +3680,8 @@ $('#btnPrintComm').addEventListener('click', () => {
 /* ===================== INIT ===================== */
 function init(){
   load();
+  const _introEl = document.getElementById('qfIntro');
+  if (_introEl) INTRO_TEMPLATE = _introEl.innerHTML;
   console.log('[SAL] init — customers:', state.customers.length, 'owners:', state.owners.length, 'custVer:', localStorage.getItem('sal_customers_version'), 'ownerVer:', localStorage.getItem('sal_owners_version'));
   // Seed default customer (permanen) — idempotent: hanya tambahkan kalau ID belum ada
   if (!state.customers.find(c => c.id === 'c_gunungmadu')){
