@@ -1287,7 +1287,7 @@ function renderColl(coll){
     case 'customers': renderCustomers(); renderCustomerSelect(); break;
     case 'owners': renderOwners(); renderOwnerSelectForQuot(); updateSidebarBrand(); break;
     case 'quotations': renderQuotationList(); updateKPI(); break;
-    case 'activityLog': renderActivityHistory(); break;
+    case 'activityLog': renderActivityHistory(); updateKPI(); break;
     case 'priceHistory': if (state.currentPTab === 'riwayat') renderHistory(); break;
     case 'settings': applySettingsUI(); break;
   }
@@ -1302,7 +1302,7 @@ function applyCollData(coll, data, fromCloud, cloudCt){
   }
   if (!Array.isArray(data)) return;
   switch(coll){
-    case 'activityLog': state.activityLog = mergeLogs(state.activityLog, data); break;
+    case 'activityLog': state.activityLog = (Array.isArray(data) && data.length === 0) ? [] : mergeLogs(state.activityLog, data); break;
     case 'products': state.products = data; break;
     case 'customers': state.customers = data; break;
     case 'owners': state.owners = data; break;
@@ -1539,7 +1539,7 @@ function renderActivityHistory(){
   if (empty) empty.classList.toggle('hidden', log.length > 0);
   wrap.innerHTML = log.map((x, i) =>
     '<tr><td>' + (i+1) + '</td>' +
-    '<td class="hx-code">' + escHTML(x.kode || '—') + '</td>' +
+    '<td class="hx-code">' + escHTML(String(x.kode || '—').toUpperCase()) + '</td>' +
     '<td>' + escHTML(x.kategori || '') + '</td>' +
     '<td>' + escHTML(x.tanggal || '') + '</td>' +
     '<td>' + escHTML(x.jam || '') + '</td></tr>'
