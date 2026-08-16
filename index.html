@@ -142,6 +142,14 @@
   .feature-card p{font-size:12.5px;color:var(--muted);line-height:1.5}
 
   .tab-row{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap}
+  .hx-table{width:100%;border-collapse:collapse;font-size:12px}
+  .hx-table th{text-align:left;background:#f1f5f9;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;padding:8px 9px;border-bottom:1px solid var(--border);white-space:nowrap}
+  .hx-table td{padding:8px 9px;border-bottom:1px solid var(--border);vertical-align:top}
+  .hx-table tr:nth-child(even) td{background:#f8fafc}
+  .hx-table td.hx-code{font-weight:700;color:var(--primary);white-space:nowrap}
+  body.dark .hx-table th{background:#1e293b;color:#94a3b8}
+  body.dark .hx-table td{border-color:#1e293b}
+  body.dark .hx-table tr:nth-child(even) td{background:#0f172a}
   .tab-row button{padding:9px 14px;font-size:13px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s ease}
   .tab-row button:hover{color:var(--text)}
   .tab-row button.active{color:var(--primary);border-color:var(--accent)}
@@ -533,6 +541,7 @@
       <button data-route="customer" class="nav-sub" data-sub-of="data"><span class="ico">👥</span> Pelanggan</button>
       <button data-route="owner" class="nav-sub" data-sub-of="data"><span class="ico">🏢</span> Perusahaan</button>
       <button data-route="commission"><span class="ico">💰</span> Komisi</button>
+      <button data-route="history"><span class="ico">🕓</span> Riwayat</button>
     </nav>
     <div class="spacer"></div>
     <button type="button" class="nav-settings" id="btnSettings">⚙️ Pengaturan</button>
@@ -943,6 +952,25 @@
         </div>
       </div>
     </section>
+
+    <!-- RIWAYAT AKTIVITAS -->
+    <section id="view-history" class="hidden">
+      <div class="panel">
+        <div class="toolbar" style="margin-bottom:14px">
+          <h2>🕓 Riwayat Aktivitas</h2>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin:-6px 0 12px">Catatan penghapusan data: penawaran, produk, pelanggan, perusahaan.</p>
+        <div style="overflow-x:auto">
+          <table class="hx-table">
+            <thead><tr><th>No</th><th>Kode</th><th>Kategori</th><th>Tanggal</th><th>Jam</th></tr></thead>
+            <tbody id="hxBody"></tbody>
+          </table>
+        </div>
+        <div id="hxEmpty" class="empty">
+          <span class="em">🕓</span><h3>Belum ada riwayat</h3><p>Setiap kali data dihapus, otomatis tercatat di sini.</p>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -957,6 +985,9 @@
       <div class="form-row">
         <div class="field"><label>Nama PT / Pelanggan <span class="req">*</span></label><input id="cfName" placeholder="contoh: PT. ABC Jaya" /></div>
         <div class="field"><label>Nama kontak default (opsional)</label><input id="cfContactDefault" placeholder="Bapak/Ibu Purchasing" /></div>
+      </div>
+      <div class="form-row full">
+        <div class="field"><label>Kode (opsional) <span class="hint" style="font-weight:400;color:var(--muted);font-size:11px">— kode singkat untuk riwayat, contoh: gmp / psmi / dongjin</span></label><input id="cfCode" placeholder="contoh: gmp / psmi / dongjin" /></div>
       </div>
       <div class="form-row full">
         <div class="field">
@@ -1166,10 +1197,6 @@
         <label class="switch"><input type="checkbox" id="setPinProd" /><span class="slider"></span></label>
       </div>
       <div class="set-row" style="display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border)">
-        <div><div style="font-weight:600;font-size:13.5px">🗑️ PIN Lock Hapus</div><div style="font-size:11.5px;color:var(--muted)">Minta PIN saat hapus produk</div></div>
-        <label class="switch"><input type="checkbox" id="setPinDel" /><span class="slider"></span></label>
-      </div>
-      <div class="set-row" style="display:flex;justify-content:space-between;align-items:center;padding:13px 0">
         <div><div style="font-weight:600;font-size:13.5px">🌙 Dark Mode</div><div style="font-size:11.5px;color:var(--muted)">Tampilan gelap / terang</div></div>
         <label class="switch"><input type="checkbox" id="setDark" /><span class="slider"></span></label>
       </div>
@@ -1182,8 +1209,8 @@
 <div id="pinOverlay" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(11,30,63,.72);backdrop-filter:blur(8px);align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:14px;padding:26px 22px;text-align:center;width:min(300px,88vw);box-shadow:0 20px 60px rgba(0,0,0,.4)">
     <div style="font-size:28px">🔒</div>
-    <div style="font-weight:700;font-size:15px;margin:8px 0 2px;color:#1c2540">Menu Produk Terkunci</div>
-    <div style="font-size:12px;color:#64748b;margin-bottom:16px">Masukkan PIN 4 angka untuk membuka</div>
+    <div style="font-weight:700;font-size:15px;margin:8px 0 2px;color:#1c2540" id="pinTitle">Menu Produk Terkunci</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:16px" id="pinDesc">Masukkan PIN 4 angka untuk membuka</div>
     <input id="pinInput" type="password" inputmode="numeric" maxlength="4" autocomplete="off"
       style="width:140px;padding:12px;font-size:24px;letter-spacing:14px;text-align:center;border:2px solid #cbd5e1;border-radius:10px;outline:none" />
     <div id="pinError" style="color:#dc2626;font-size:12.5px;min-height:18px;margin-top:8px"></div>
@@ -1222,30 +1249,13 @@ const OWNER_DATA_VERSION = 'v2_2026_full'; // bump kalau data seed owner berubah
 const CUSTOMER_DATA_VERSION = 'v2_2026_gmp_plantation';
 const load = () => {
   try { state.products = JSON.parse(localStorage.getItem(LS.products) || '[]') } catch(e){state.products=[]}
-  try {
-    const storedVer = localStorage.getItem('sal_customers_version');
-    if (storedVer !== CUSTOMER_DATA_VERSION){
-      state.customers = [];
-      localStorage.removeItem(LS.customers);
-    } else {
-      state.customers = JSON.parse(localStorage.getItem(LS.customers) || '[]');
-    }
-  } catch(e){state.customers=[]}
-  try {
-    const storedVer = localStorage.getItem('sal_owners_version');
-    if (storedVer !== OWNER_DATA_VERSION){
-      // Seed baru atau versi lama → reset owner
-      state.owners = [];
-      localStorage.removeItem(LS.owners);
-    } else {
-      state.owners = JSON.parse(localStorage.getItem(LS.owners) || '[]');
-    }
-  } catch(e){state.owners=[]}
+  try { state.customers = JSON.parse(localStorage.getItem(LS.customers) || '[]'); } catch(e){state.customers=[]}
+  try { state.owners = JSON.parse(localStorage.getItem(LS.owners) || '[]'); } catch(e){state.owners=[]}
   try { state.quotations = JSON.parse(localStorage.getItem(LS.quotations) || '[]') } catch(e){state.quotations=[]}
   try { state.commissions = JSON.parse(localStorage.getItem(LS.commissions) || '[]') } catch(e){state.commissions=[]}
   try { state.priceHistory = JSON.parse(localStorage.getItem('sal_price_history') || '[]') } catch(e){state.priceHistory=[]}
   try { state.settings = JSON.parse(localStorage.getItem('sal_settings') || 'null') } catch(e){state.settings=null}
-  if (!state.settings) state.settings = { pinProd: true, pinDel: true };
+  if (!state.settings) state.settings = { pinProd: true };
   // dark mode PER DEVICE (tidak ikut sync cloud)
   try { state.dark = localStorage.getItem('sal_dark') === '1'; } catch(e){ state.dark = false; }
   try {
@@ -1297,8 +1307,12 @@ try {
 
 const SYNC_COLLS = ['products','customers','owners','quotations','commissions','priceHistory','settings'];
 let syncReady = false; // true setelah pull pertama selesai (cegah seed menimpa cloud)
-const syncMeta = {};
-function setLocalMeta(coll){ syncMeta[coll] = Date.now(); }
+let syncMeta = {};
+try { syncMeta = JSON.parse(localStorage.getItem('sal_syncmeta') || '{}'); } catch(e){ syncMeta = {}; }
+function setLocalMeta(coll){
+  syncMeta[coll] = Date.now();
+  try { localStorage.setItem('sal_syncmeta', JSON.stringify(syncMeta)); } catch(e){}
+}
 function getLocalMeta(coll){ return syncMeta[coll] || 0; }
 
 function getCollData(coll){
@@ -1340,7 +1354,7 @@ function renderColl(coll){
 }
 function applyCollData(coll, data, fromCloud, cloudCt){
   if (coll === 'settings'){
-    if (data && typeof data === 'object') state.settings = Object.assign({ pinProd:true, pinDel:true }, data);
+    if (data && typeof data === 'object') state.settings = Object.assign({ pinProd:true }, data);
     if (fromCloud){ persistLocal('settings'); if (cloudCt) lastCloud.settings = cloudCt; }
     else saveSettings();
     applySettingsUI(); // dark tetap per device, tidak ikut cloud
@@ -1369,6 +1383,8 @@ function syncPush(coll){
   if (!firebaseOk || !syncReady) return;
   const data = getCollData(coll);
   if (data == null) return;
+  // Proteksi: jangan dorong array kosong dari fresh install ke cloud (cegah menimpa data cloud yang ada)
+  if (Array.isArray(data) && data.length === 0 && getLocalMeta(coll) === 0) return;
   clearTimeout(pushTimers[coll]);
   pushTimers[coll] = setTimeout(() => {
     try {
@@ -1380,19 +1396,62 @@ function syncPush(coll){
     } catch (e) { console.warn('[SYNC] push', coll, 'err:', e.message); }
   }, 400);
 }
+// ID seed bawaan — dipakai untuk deteksi "cloud ketimpa seed" (bug lama) vs data asli pengguna
+const SEED_IDS = {
+  customers: new Set(['c_gunungmadu']),
+  owners: new Set(['o_default_sal','o_default_bcl'])
+};
+// Produk seed: dideteksi dari kombinasi KODE|BRAND (id aslinya memakai Date.now(),
+// jadi tidak bisa dideteksi dari id). Cocokkan dengan daftar 12 produk default.
+const SEED_PRODUCT_KEYS = new Set([
+  'ALFA 56|ALFA','ALFA 76|ALFA','ALFA 77|ALFA','ALFA 77 XHT|ALFA','ALFA 78|ALFA',
+  'ALFA 80|ALFA','ALFA 690|ALFA','ALFA 6613.SH|ALFA','ALFA 6690.5|ALFA',
+  'ALFA SM 8000 SNB|ALFA','ALFA SUGAR MILL|ALFA','BESTON BL-824.5|BESTON'
+].map(k => k.toUpperCase()));
+function isSeedOnly(coll, arr){
+  if (!Array.isArray(arr) || arr.length === 0) return false;
+  if (coll === 'products') return arr.every(p => {
+    if (!p) return false;
+    return SEED_PRODUCT_KEYS.has((String(p.code || '') + '|' + String(p.brand || '')).toUpperCase());
+  });
+  const set = SEED_IDS[coll];
+  if (!set) return false;
+  return arr.every(x => x && set.has(x.id));
+}
+function localHasCustom(coll){
+  const arr = getCollData(coll);
+  return Array.isArray(arr) && arr.length > 0 && !isSeedOnly(coll, arr);
+}
+let cloudHadDoc = {}; // coll -> true/false (false = cloud kosong, undefined = gagal tarik)
+let localWins = {};   // coll -> true kalau data lokal yang menang & harus didorong ke cloud
 function syncPullAll(){
   if (!firebaseOk) return Promise.resolve();
   return Promise.all(SYNC_COLLS.map(coll => {
     try {
       return db.collection(coll).doc('main').get().then(doc => {
+        const lt = getLocalMeta(coll);
         if (doc.exists){
+          cloudHadDoc[coll] = true;
           const cloud = doc.data() || {};
           const ct = cloud.updatedAt ? (cloud.updatedAt.toDate ? cloud.updatedAt.toDate().getTime() : 0) : 0;
-          const lt = getLocalMeta(coll);
-          if (ct > lt) applyCollData(coll, cloud.data, true, ct);
-          else if (lt > ct && lt > 0) syncPush(coll);
+          // PULIHKAN: kalau cloud cuma berisi seed bawaan (tertimpa bug lama) tapi
+          // perangkat ini masih punya data asli (custom), pakai data lokal & dorong ke cloud
+          const cloudArr = Array.isArray(cloud.data) ? cloud.data : null;
+          if (cloudArr && isSeedOnly(coll, cloudArr) && localHasCustom(coll)){
+            localWins[coll] = true;
+            if (syncReady) syncPush(coll);
+          } else if (ct > lt){
+            applyCollData(coll, cloud.data, true, ct);
+          } else if (lt > ct && lt > 0){
+            // data lokal lebih baru dari cloud → dorong ke cloud
+            localWins[coll] = true;
+            if (syncReady) syncPush(coll);
+          }
         } else {
-          syncPush(coll); // cloud kosong -> dorong data lokal
+          // cloud belum ada → buat dari data lokal (seed default / data user)
+          cloudHadDoc[coll] = false;
+          localWins[coll] = true;
+          if (syncReady) syncPush(coll);
         }
       }).catch(e => console.warn('[SYNC] pull', coll, 'gagal:', e.message));
     } catch (e) { console.warn('[SYNC] pull', coll, 'err:', e.message); return Promise.resolve(); }
@@ -1462,6 +1521,47 @@ const fmtID = n => {
 };
 const escHTML = s => String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const todayLong = d => { const dt = d || new Date(); return dt.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' }); };
+const ACTIVITY_LS = 'sal_activity_log';
+function pad2(n){ return (n < 10 ? '0' : '') + n; }
+// Kode singkat pelanggan: pakai field code kalau ada, kalau tidak turunkan dari nama
+function kodePelanggan(c){
+  if (!c) return '—';
+  if (c.code && String(c.code).trim()) return String(c.code).trim().toLowerCase();
+  const nama = String(c.name || '').replace(/^(PT\.?|CV\.?|UD\.?|TOKO|PERUSAHAAN|PABRIK)\s*/i, '').trim();
+  const kata = nama.split(/\s+/).filter(w => w.length >= 2);
+  if (kata.length >= 2) return kata.map(w => w[0]).join('').toLowerCase();
+  if (kata.length === 1) return kata[0].slice(0, 4).toLowerCase();
+  return String(c.id || '').replace(/^c_/, '').toLowerCase() || '—';
+}
+function addActivityLog(kategori, kode){
+  try {
+    let log = []; try { log = JSON.parse(localStorage.getItem(ACTIVITY_LS) || '[]'); } catch(e){ log = []; }
+    const now = new Date();
+    log.unshift({
+      kode: String(kode || '—'),
+      kategori: String(kategori || ''),
+      tanggal: todayLong(now),
+      jam: pad2(now.getHours()) + ':' + pad2(now.getMinutes()),
+      ts: now.getTime()
+    });
+    if (log.length > 500) log = log.slice(0, 500);
+    localStorage.setItem(ACTIVITY_LS, JSON.stringify(log));
+  } catch(e){}
+}
+function renderActivityHistory(){
+  const wrap = $('#hxBody');
+  if (!wrap) return;
+  let log = []; try { log = JSON.parse(localStorage.getItem(ACTIVITY_LS) || '[]'); } catch(e){ log = []; }
+  const empty = $('#hxEmpty');
+  if (empty) empty.classList.toggle('hidden', log.length > 0);
+  wrap.innerHTML = log.map((x, i) =>
+    '<tr><td>' + (i+1) + '</td>' +
+    '<td class="hx-code">' + escHTML(x.kode || '—') + '</td>' +
+    '<td>' + escHTML(x.kategori || '') + '</td>' +
+    '<td>' + escHTML(x.tanggal || '') + '</td>' +
+    '<td>' + escHTML(x.jam || '') + '</td></tr>'
+  ).join('');
+}
 const toast = (msg, type='good') => {
   const t = $('#toast');
   t.className = 'toast show ' + type;
@@ -1472,9 +1572,8 @@ const toast = (msg, type='good') => {
 
 /* ===================== PENGATURAN ===================== */
 function applySettingsUI(){
-  const sp = $('#setPinProd'), sd = $('#setPinDel'), dk = $('#setDark');
+  const sp = $('#setPinProd'), dk = $('#setDark');
   if (sp) sp.checked = !!(state.settings && state.settings.pinProd);
-  if (sd) sd.checked = !!(state.settings && state.settings.pinDel);
   if (dk) dk.checked = !!state.dark;
   document.body.classList.toggle('dark', !!state.dark);
 }
@@ -1491,7 +1590,6 @@ $('#settingsClose')?.addEventListener?.('click', () => {
   document.body.style.overflow = '';
 });
 $('#setPinProd')?.addEventListener?.('change', e => { state.settings.pinProd = e.target.checked; saveSettings(); });
-$('#setPinDel')?.addEventListener?.('change', e => { state.settings.pinDel = e.target.checked; saveSettings(); });
 $('#setDark')?.addEventListener?.('change', e => {
   state.dark = e.target.checked;
   try { localStorage.setItem('sal_dark', state.dark ? '1' : '0'); } catch(err){}
@@ -1505,6 +1603,9 @@ function showPinOverlay(action){
   pinAction = (typeof action === 'function') ? action : null;
   const ov = $('#pinOverlay');
   if (!ov) return;
+  const t = $('#pinTitle'), d = $('#pinDesc');
+  if (t) t.textContent = pinAction ? '🔒 Konfirmasi Tindakan' : 'Menu Produk Terkunci';
+  if (d) d.textContent = pinAction ? 'Masukkan PIN 4 angka untuk melanjutkan' : 'Masukkan PIN 4 angka untuk membuka';
   ov.style.display = 'flex';
   $('#pinInput').value = '';
   $('#pinError').textContent = '';
@@ -1541,7 +1642,7 @@ $('#pinCancel')?.addEventListener?.('click', () => {
 
 const go = (route) => {
   $$('.nav button').forEach(b => b.classList.toggle('active', b.dataset.route === route));
-  ['home','pricelist','product','customer','owner','quotation','quotation-list','commission'].forEach(v => {
+  ['home','pricelist','product','customer','owner','quotation','quotation-list','commission','history'].forEach(v => {
     const el = $('#view-'+v);
     if (el) el.classList.toggle('hidden', v!==route);
   });
@@ -1553,6 +1654,7 @@ const go = (route) => {
   if (route==='customer') renderCustomers();
   if (route==='owner') renderOwners();
   if (route==='commission'){ populateQuotSelect(); calcCommission(); }
+  if (route==='history') renderActivityHistory();
   if (route==='quotation') {
     if (state.qmode === 'preview') renderPaper();
     renderItemsForm();
@@ -1787,10 +1889,14 @@ $('#quotList')?.addEventListener?.('click', e => {
   if (pb){ printQuotationDetail(pb.dataset.quotPrint); return; }
   const db = e.target.closest('[data-quot-del]');
   if (db){
-    if (!confirm('Hapus penawaran ini dari daftar?')) return;
-    state.quotations = state.quotations.filter(x => x.id !== db.dataset.quotDel);
-    saveQuots(); updateKPI(); renderQuotationList();
-    toast('Penawaran dihapus dari daftar','info');
+    const q = state.quotations.find(x => x.id === db.dataset.quotDel);
+    const doDel = () => {
+      addActivityLog('Penawaran', q ? q.no : db.dataset.quotDel);
+      state.quotations = state.quotations.filter(x => x.id !== db.dataset.quotDel);
+      saveQuots(); updateKPI(); renderQuotationList();
+      toast('Penawaran dihapus dari daftar','info');
+    };
+    showPinOverlay(doDel);
   }
 });
 
@@ -2147,12 +2253,12 @@ $('#prodList').addEventListener('click', e => {
   if (act==='edit') openProdModal(p);
   if (act==='del'){
     const doDel = () => {
+      addActivityLog('Produk', p.code);
       state.products = state.products.filter(x => x.id !== id);
       saveProducts(); renderProducts(); updateKPI();
       toast('Produk dihapus','info');
     };
-    if (state.settings && state.settings.pinDel === false) doDel(); // lock hapus mati -> langsung hapus
-    else showPinOverlay(doDel); // PIN lock hapus
+    showPinOverlay(doDel);
   }
 });
 
@@ -2255,11 +2361,13 @@ $('#custList')?.addEventListener?.('click', e => {
   const c = state.customers.find(x => x.id === id); if (!c) return;
   if (act==='edit') openCustModal(c);
   if (act==='del'){
-    if (confirm('Hapus pelanggan "'+c.name+'"?')){
+    const doDel = () => {
+      addActivityLog('Pelanggan', kodePelanggan(c));
       state.customers = state.customers.filter(x => x.id !== id);
       saveCustomers(); renderCustomers(); renderCustomerSelect();
       toast('Pelanggan dihapus','info');
-    }
+    };
+    showPinOverlay(doDel);
   }
 });
 function openCustModal(c=null){
@@ -2267,6 +2375,7 @@ function openCustModal(c=null){
   state.editingUPs = (c?.ups && c.ups.length) ? c.ups.map(u => ({...u})) : (c?.up ? [{name: c.up, position: c.upPosition || ''}] : [{name:'', position:''}]);
   renderUPList();
   $('#cfName').value = c?.name || '';
+  $('#cfCode').value = c?.code || '';
   $('#cfAddr').value = c?.address || '';
   $('#cfPhone').value = c?.phone || '';
   $('#cfEmail').value = c?.email || '';
@@ -2324,6 +2433,7 @@ $('#btnSaveCustModal')?.addEventListener?.('click', () => {
   const c = {
     id: state.editingCustomer || ('c_' + Date.now()),
     name,
+    code: $('#cfCode').value.trim().toLowerCase() || '',
     up: upLegacy,
     ups: ups,
     address: $('#cfAddr').value.trim(),
@@ -2387,11 +2497,13 @@ $('#ownerList')?.addEventListener?.('click', e => {
   const o = state.owners.find(x => x.id === id); if (!o) return;
   if (act==='edit') openOwnerModal(o);
   if (act==='del'){
-    if (confirm('Hapus perusahaan "'+o.name+'"?')){
+    const doDel = () => {
+      addActivityLog('Owner', (o.shortName || o.name || '').toLowerCase());
       state.owners = state.owners.filter(x => x.id !== id);
       saveOwners(); renderOwners();
       toast('Perusahaan dihapus','info');
-    }
+    };
+    showPinOverlay(doDel);
   }
 });
 function openOwnerModal(o=null){
@@ -3694,7 +3806,7 @@ function init(){
         up:'Bapak Ali Pauza (Purchasing)', ups:[{name:'Bapak Ali Pauza', position:'Purchasing'}],
         phone:'', email:'', contact:'', npwp:'' }
     );
-    saveCustomers();
+    persistLocal('customers');
   }
   // Seed default products (ALFA & Beston) — sekali saja (fresh install / pertama kali)
   if (!localStorage.getItem('sal_products_version')){
@@ -3719,7 +3831,7 @@ function init(){
       }
     });
     localStorage.setItem('sal_products_version','v1_alfa_2026');
-    saveProducts();
+    persistLocal('products');
   }
 
   // Seed default owner (perusahaan) — idempotent: hanya tambahkan kalau ID belum ada
@@ -3737,7 +3849,7 @@ function init(){
         noSuratExample:'000/SAL-PNW/VIII/2026',
         brandDagang:'Sigmalube' }
     );
-    saveOwners();
+    persistLocal('owners');
   }
   if (!state.owners.find(o => o.id === 'o_default_bcl')){
     state.owners.push(
@@ -3753,7 +3865,7 @@ function init(){
         noSuratExample:'000/BCL-SP/VIII/2026',
         brandDagang:'Beston' }
     );
-    saveOwners();
+    persistLocal('owners');
   }
   renderCustomerSelect();
   renderItemsForm();
@@ -3767,7 +3879,11 @@ function init(){
   setTimeout(() => {
     syncPullAll().then(() => {
       syncReady = true;
-      SYNC_COLLS.forEach(c => syncPush(c));
+      // Dorong hanya yang memang menang lokal (user edit / pemulihan) atau cloud-nya belum ada.
+      // Ini mencegah seed default menimpa data cloud (penyebab data hilang).
+      SYNC_COLLS.forEach(c => {
+        if (localWins[c] || cloudHadDoc[c] === false) syncPush(c);
+      });
       syncListen(); // mulai real-time setelah pull awal
     });
   }, 800);
