@@ -374,19 +374,6 @@
   .sign-col .signer{font-weight:700;text-decoration:underline;font-size:13px}
   .sign-col .position{font-size:12px;color:#555;margin-top:1px}
 
-  /* COMMISSION */
-  .comm-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:18px}
-  @media (max-width:1000px){.comm-grid{grid-template-columns:1fr}}
-  .comm-preview{background:#fff;border-radius:10px;padding:20px;box-shadow:var(--shadow);border:1px solid var(--border)}
-  .comm-preview h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
-  .comm-line{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #e3e7f1;font-size:13px}
-  .comm-line:last-child{border-bottom:none}
-  .comm-line .lbl{color:var(--muted)}
-  .comm-line .val{font-weight:600}
-  .comm-total{margin-top:12px;padding:12px 14px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff}
-  .comm-total .row{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:3px;opacity:.9}
-  .comm-total .big{font-size:20px;font-weight:800;letter-spacing:.4px;margin-top:3px;display:block;color:var(--accent-2)}
-
   .pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:30px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
   .pill-on{background:#dcfce7;color:#15803d}
   .pill-off{background:#fee2e2;color:#b91c1c}
@@ -401,7 +388,7 @@
 
   /* DARK MODE */
   body.dark{--bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--muted:#94a3b8;--border:#334155;--border-strong:#475569;--header-bg:#1e293b;--header-text:#e2e8f0}
-  body.dark .panel,body.dark .prod-card,body.dark .qitem-card,body.dark .userbox,body.dark .comm-preview{background:var(--card);border-color:#334155}
+  body.dark .panel,body.dark .prod-card,body.dark .qitem-card,body.dark .userbox{background:var(--card);border-color:#334155}
   body.dark .search input,body.dark .field input,body.dark .field select,body.dark .field textarea{background:#0f172a;color:#e2e8f0;border-color:#334155}
   body.dark .hero{background:linear-gradient(135deg,#0b1e3f 0%,#173a7a 100%)}
   body.dark .editor-area,body.dark .editor-bar{background:#0f172a;color:#e2e8f0;border-color:#334155}
@@ -540,7 +527,6 @@
       <button data-route="product" class="nav-sub" data-sub-of="data"><span class="ico">🛢️</span> Produk</button>
       <button data-route="customer" class="nav-sub" data-sub-of="data"><span class="ico">👥</span> Pelanggan</button>
       <button data-route="owner" class="nav-sub" data-sub-of="data"><span class="ico">🏢</span> Perusahaan</button>
-      <button data-route="commission"><span class="ico">💰</span> Komisi</button>
       <button data-route="history"><span class="ico">🕓</span> Riwayat</button>
     </nav>
     <div class="spacer"></div>
@@ -574,7 +560,7 @@
       <div class="grid-3" style="margin-bottom:20px">
         <div class="kpi"><div class="icon">🛢️</div><div><h3>Total Produk</h3><div class="val" id="kpiProduct">0</div></div></div>
         <div class="kpi accent"><div class="icon">📄</div><div><h3>Penawaran</h3><div class="val" id="kpiQuot">0</div></div></div>
-        <div class="kpi green"><div class="icon">💰</div><div><h3>Total Komisi</h3><div class="val" id="kpiComm">Rp 0</div></div></div>
+        <div class="kpi green"><div class="icon">🕓</div><div><h3>Riwayat</h3><div class="val" id="kpiHistory">0</div></div></div>
       </div>
     </section>
 
@@ -906,60 +892,13 @@
       </div>
     </section>
 
-    <!-- KOMISI -->
-    <section id="view-commission" class="hidden">
-      <div class="panel">
-        <h2>💰 Kalkulator Komisi Sales</h2>
-        <div class="comm-grid">
-          <div>
-            <div class="form-row full">
-              <div class="field"><label>Pilih Penawaran <span class="req">*</span> <span style="font-weight:400;color:var(--muted)">(dari Daftar Penawaran)</span></label>
-                <select id="cQuotSel"><option value="">— Pilih Penawaran —</option></select>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="field"><label>Nama Sales</label><input id="cSales" placeholder="Nama sales"/></div>
-              <div class="field"><label>Persentase Komisi (%)</label><input id="cPct" type="number" min="0" max="100" step="0.1" value="3"/></div>
-            </div>
-            <div class="form-row full">
-              <div class="field"><label>Catatan</label><textarea id="cNote" placeholder="Catatan tambahan (opsional)"></textarea></div>
-            </div>
-            <div style="font-size:11.5px;color:var(--muted);background:#f8fafc;border:1px dashed var(--border);border-radius:8px;padding:8px 10px;margin-top:2px">
-              Komisi = (Penjualan − Modal) × persen. Penjualan &amp; modal otomatis dari penawaran terpilih.
-            </div>
-            <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px">
-              <button class="btn btn-accent" id="btnCalcComm">🔄 Hitung Ulang</button>
-              <button class="btn btn-ghost" id="btnSaveComm">💾 Simpan</button>
-              <button class="btn btn-ghost" id="btnPrintComm">🖨️ Cetak</button>
-              <button class="btn btn-bad" id="btnResetComm">🗑️ Reset</button>
-            </div>
-          </div>
-          <div class="comm-preview">
-            <h3>Pratinjau Komisi</h3>
-            <div class="comm-line"><span class="lbl">Penawaran</span><span class="val" id="prevInv">—</span></div>
-            <div class="comm-line"><span class="lbl">Tanggal</span><span class="val" id="prevPO">—</span></div>
-            <div class="comm-line"><span class="lbl">Sales</span><span class="val" id="prevSales">—</span></div>
-            <div class="comm-line"><span class="lbl">Customer</span><span class="val" id="prevCust">—</span></div>
-            <div class="comm-line"><span class="lbl">Modal</span><span class="val" id="prevModal">Rp 0</span></div>
-            <div class="comm-line"><span class="lbl">Penjualan</span><span class="val" id="prevNilai">Rp 0</span></div>
-            <div class="comm-line"><span class="lbl">Laba (Penjualan − Modal)</span><span class="val" id="prevDasar">Rp 0</span></div>
-            <div class="comm-line"><span class="lbl">Persentase Komisi</span><span class="val" id="prevPct">3%</span></div>
-            <div class="comm-total">
-              <div class="row"><span>Total Komisi</span><span id="prevKomisiBadge">dari Laba</span></div>
-              <span class="big" id="prevKomisi">Rp 0</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- RIWAYAT AKTIVITAS -->
     <section id="view-history" class="hidden">
       <div class="panel">
         <div class="toolbar" style="margin-bottom:14px">
           <h2>🕓 Riwayat Aktivitas</h2>
         </div>
-        <p style="font-size:12px;color:var(--muted);margin:-6px 0 12px">Catatan penghapusan data: penawaran, produk, pelanggan, perusahaan.</p>
+        <p style="font-size:12px;color:var(--muted);margin:-6px 0 12px">Catatan penghapusan data: penawaran, produk, pelanggan, perusahaan. Tersimpan permanen & tersinkron.</p>
         <div style="overflow-x:auto">
           <table class="hx-table">
             <thead><tr><th>No</th><th>Kode</th><th>Kategori</th><th>Tanggal</th><th>Jam</th></tr></thead>
@@ -971,6 +910,7 @@
         </div>
       </div>
     </section>
+
   </main>
 </div>
 
@@ -1219,9 +1159,9 @@
 </div>
 
 <script>
-const LS = { products:'sal_products_v1', customers:'sal_customers_v1', owners:'sal_owners_v1', quotations:'sal_quotations_v1', commissions:'sal_commissions_v1' };
+const LS = { products:'sal_products_v1', customers:'sal_customers_v1', owners:'sal_owners_v1', quotations:'sal_quotations_v1' };
 const state = {
-  products: [], customers: [], owners: [], quotations: [], commissions: [],
+  products: [], customers: [], owners: [], quotations: [], activityLog: [],
   priceHistory: [],
   currentPTab: 'oil',
   editingProduct: null,
@@ -1252,7 +1192,7 @@ const load = () => {
   try { state.customers = JSON.parse(localStorage.getItem(LS.customers) || '[]'); } catch(e){state.customers=[]}
   try { state.owners = JSON.parse(localStorage.getItem(LS.owners) || '[]'); } catch(e){state.owners=[]}
   try { state.quotations = JSON.parse(localStorage.getItem(LS.quotations) || '[]') } catch(e){state.quotations=[]}
-  try { state.commissions = JSON.parse(localStorage.getItem(LS.commissions) || '[]') } catch(e){state.commissions=[]}
+  try { state.activityLog = JSON.parse(localStorage.getItem('sal_activity_log') || '[]') } catch(e){state.activityLog=[]}
   try { state.priceHistory = JSON.parse(localStorage.getItem('sal_price_history') || '[]') } catch(e){state.priceHistory=[]}
   try { state.settings = JSON.parse(localStorage.getItem('sal_settings') || 'null') } catch(e){state.settings=null}
   if (!state.settings) state.settings = { pinProd: true };
@@ -1305,7 +1245,7 @@ try {
   }
 } catch (e) { console.warn('[SYNC] init gagal:', e); }
 
-const SYNC_COLLS = ['products','customers','owners','quotations','commissions','priceHistory','settings'];
+const SYNC_COLLS = ['products','customers','owners','quotations','priceHistory','settings','activityLog'];
 let syncReady = false; // true setelah pull pertama selesai (cegah seed menimpa cloud)
 let syncMeta = {};
 try { syncMeta = JSON.parse(localStorage.getItem('sal_syncmeta') || '{}'); } catch(e){ syncMeta = {}; }
@@ -1321,7 +1261,7 @@ function getCollData(coll){
     case 'customers': return state.customers;
     case 'owners': return state.owners;
     case 'quotations': return state.quotations;
-    case 'commissions': return state.commissions;
+    case 'activityLog': return state.activityLog;
     case 'priceHistory': return state.priceHistory;
     case 'settings': return state.settings;
   }
@@ -1336,7 +1276,7 @@ function persistLocal(coll){
     case 'customers': localStorage.setItem('sal_customers_version', CUSTOMER_DATA_VERSION); save(LS.customers, state.customers); break;
     case 'owners': localStorage.setItem('sal_owners_version', OWNER_DATA_VERSION); save(LS.owners, state.owners); break;
     case 'quotations': save(LS.quotations, state.quotations); break;
-    case 'commissions': save(LS.commissions, state.commissions); break;
+    case 'activityLog': localStorage.setItem('sal_activity_log', JSON.stringify(state.activityLog)); break;
     case 'priceHistory': localStorage.setItem('sal_price_history', JSON.stringify(state.priceHistory)); break;
     case 'settings': localStorage.setItem('sal_settings', JSON.stringify(state.settings)); break;
   }
@@ -1347,7 +1287,7 @@ function renderColl(coll){
     case 'customers': renderCustomers(); renderCustomerSelect(); break;
     case 'owners': renderOwners(); renderOwnerSelectForQuot(); updateSidebarBrand(); break;
     case 'quotations': renderQuotationList(); updateKPI(); break;
-    case 'commissions': updateKPI(); break;
+    case 'activityLog': renderActivityHistory(); break;
     case 'priceHistory': if (state.currentPTab === 'riwayat') renderHistory(); break;
     case 'settings': applySettingsUI(); break;
   }
@@ -1362,11 +1302,11 @@ function applyCollData(coll, data, fromCloud, cloudCt){
   }
   if (!Array.isArray(data)) return;
   switch(coll){
+    case 'activityLog': state.activityLog = mergeLogs(state.activityLog, data); break;
     case 'products': state.products = data; break;
     case 'customers': state.customers = data; break;
     case 'owners': state.owners = data; break;
     case 'quotations': state.quotations = data; break;
-    case 'commissions': state.commissions = data; break;
     case 'priceHistory': state.priceHistory = data; break;
   }
   if (fromCloud){
@@ -1491,7 +1431,6 @@ const saveProducts = () => { save(LS.products, state.products); setLocalMeta('pr
 const saveCustomers = () => { localStorage.setItem('sal_customers_version', CUSTOMER_DATA_VERSION); save(LS.customers, state.customers); setLocalMeta('customers'); syncPush('customers'); };
 const saveOwners = () => { localStorage.setItem('sal_owners_version', OWNER_DATA_VERSION); save(LS.owners, state.owners); setLocalMeta('owners'); syncPush('owners'); }
 const saveQuots = () => { save(LS.quotations, state.quotations); setLocalMeta('quotations'); syncPush('quotations'); };
-const saveComm = () => { save(LS.commissions, state.commissions); setLocalMeta('commissions'); syncPush('commissions'); };
 const saveQCurrent = () => save('sal_quotation_current_v1', {
   qitems: state.qitems, terms: state.terms,
   ownerId: state.currentOwnerId,
@@ -1563,6 +1502,16 @@ function noSuratRealtime(example){
     .replace(/\b(?:XII|XI|IX|VIII|VII|VI|V|IV|III|II|I)\b/g, rom)
     .replace(/\b20\d{2}\b/g, yr);
 }
+// Gabungkan dua daftar riwayat (untuk sinkron cloud): unik, terbaru dulu, maks 500
+function mergeLogs(a, b){
+  const map = {};
+  [...(Array.isArray(a)?a:[]), ...(Array.isArray(b)?b:[])].forEach(x => {
+    if (!x || !x.ts) return;
+    const key = x.kode + '|' + x.kategori + '|' + x.ts;
+    if (!(key in map)) map[key] = x;
+  });
+  return Object.values(map).sort((x,y) => (y.ts||0)-(x.ts||0)).slice(0, 500);
+}
 function addActivityLog(kategori, kode){
   try {
     let log = []; try { log = JSON.parse(localStorage.getItem(ACTIVITY_LS) || '[]'); } catch(e){ log = []; }
@@ -1575,13 +1524,17 @@ function addActivityLog(kategori, kode){
       ts: now.getTime()
     });
     if (log.length > 500) log = log.slice(0, 500);
+    state.activityLog = log; // state = sumber kebenaran untuk sync cloud
     localStorage.setItem(ACTIVITY_LS, JSON.stringify(log));
+    setLocalMeta('activityLog');
+    syncPush('activityLog');
+    if (typeof updateKPI === 'function') updateKPI();
   } catch(e){}
 }
 function renderActivityHistory(){
   const wrap = $('#hxBody');
   if (!wrap) return;
-  let log = []; try { log = JSON.parse(localStorage.getItem(ACTIVITY_LS) || '[]'); } catch(e){ log = []; }
+  const log = (state.activityLog || []).slice();
   const empty = $('#hxEmpty');
   if (empty) empty.classList.toggle('hidden', log.length > 0);
   wrap.innerHTML = log.map((x, i) =>
@@ -1672,7 +1625,7 @@ $('#pinCancel')?.addEventListener?.('click', () => {
 
 const go = (route) => {
   $$('.nav button').forEach(b => b.classList.toggle('active', b.dataset.route === route));
-  ['home','pricelist','product','customer','owner','quotation','quotation-list','commission','history'].forEach(v => {
+  ['home','pricelist','product','customer','owner','quotation','quotation-list','history'].forEach(v => {
     const el = $('#view-'+v);
     if (el) el.classList.toggle('hidden', v!==route);
   });
@@ -1683,7 +1636,6 @@ const go = (route) => {
   }
   if (route==='customer') renderCustomers();
   if (route==='owner') renderOwners();
-  if (route==='commission'){ populateQuotSelect(); calcCommission(); }
   if (route==='history') renderActivityHistory();
   if (route==='quotation') {
     if (state.qmode === 'preview') renderPaper();
@@ -1771,8 +1723,7 @@ $('#sidebarBackdrop')?.addEventListener?.('click', closeSidebar);
 function updateKPI(){
   $('#kpiProduct').textContent = state.products.length;
   $('#kpiQuot').textContent = state.quotations.length;
-  const tot = state.commissions.reduce((a,c)=>a + (Number(c.komisi)||0), 0);
-  $('#kpiComm').textContent = rupiah(tot);
+  $('#kpiHistory').textContent = (state.activityLog || []).length;
 }
 
 /* Toggle collapse section Penawaran (klik di h4) */
@@ -3697,134 +3648,6 @@ $('#sigInput').addEventListener('change', e => {
   r.readAsDataURL(f);
 });
 
-/* ===================== KOMISI =====================
-   Rumus: Komisi = (Penjualan − Modal) × persen  (tanpa PPN)
-   Data diambil dari Daftar Penawaran (untuk sementara) */
-function populateQuotSelect(){
-  const sel = $('#cQuotSel');
-  if (!sel) return;
-  const prev = sel.value;
-  const list = (state.quotations || []).slice().sort((a,b) => (b.savedAt||'').localeCompare(a.savedAt||''));
-  sel.innerHTML = '<option value="">— Pilih Penawaran —</option>' + list.map(q =>
-    '<option value="' + q.id + '">' + escHTML(q.no || 'Tanpa No') + ' · ' + escHTML(q.customer || '-') + ' · ' + escHTML(q.total || '') + '</option>'
-  ).join('');
-  sel.value = prev;
-}
-function quotPenjualan(q){
-  return (q.items || []).reduce((a, it) => a + calcItemTotal(it), 0);
-}
-function quotModal(q){
-  // modal = qty × cost × multiplier (cost per unit dasar, seperti price)
-  return (q.items || []).reduce((a, it) => {
-    if (isFlatPrice(it)) return a + (Number(it.qty)||0) * (Number(it.cost)||0);
-    const mult = unitMultiplier(it.unit, it.cat);
-    return a + (Number(it.qty)||0) * (Number(it.cost)||0) * mult;
-  }, 0);
-}
-function onQuotSel(){ calcCommission(); }
-function calcCommission(){
-  const qid = $('#cQuotSel').value;
-  const q = state.quotations.find(x => x.id === qid);
-  const sales = $('#cSales').value || '—';
-  const pct = Number($('#cPct').value) || 0;
-  const penjualan = q ? quotPenjualan(q) : 0;
-  const modal = q ? quotModal(q) : 0;
-  const laba = penjualan - modal;
-  const komisi = laba * (pct/100);
-  $('#prevInv').textContent = q ? (q.no || '—') : '—';
-  $('#prevPO').textContent = q ? (q.date || '—') : '—';
-  $('#prevSales').textContent = sales;
-  $('#prevCust').textContent = q ? (q.customer || '—') : '—';
-  $('#prevNilai').textContent = rupiah(penjualan);
-  $('#prevModal').textContent = rupiah(modal);
-  $('#prevDasar').textContent = rupiah(laba);
-  $('#prevPct').textContent = pct + '%';
-  $('#prevKomisi').textContent = rupiah(komisi);
-  $('#prevKomisiBadge').textContent = q ? 'dari Laba' : '—';
-}
-const cQuotSel = $('#cQuotSel');
-if (cQuotSel) cQuotSel.addEventListener('change', calcCommission);
-['cSales','cPct','cNote'].forEach(id => {
-  const el = $('#'+id);
-  if (el) el.addEventListener('input', calcCommission);
-});
-$('#btnCalcComm').addEventListener('click', () => { calcCommission(); toast('Perhitungan diperbarui','info') });
-$('#btnResetComm').addEventListener('click', () => {
-  $('#cQuotSel').value = '';
-  ['cSales','cNote'].forEach(id => $('#'+id).value = '');
-  $('#cPct').value = 3;
-  calcCommission();
-  toast('Form dikosongkan','info');
-});
-$('#btnSaveComm').addEventListener('click', () => {
-  const qid = $('#cQuotSel').value;
-  const q = state.quotations.find(x => x.id === qid);
-  if (!q){ toast('Pilih penawaran dulu','bad'); return }
-  const data = {
-    id: 'c_' + Date.now(),
-    quotId: q.id,
-    invoice: q.no || '', po: q.date || '',
-    sales: $('#cSales').value, customer: q.customer || '',
-    pct: Number($('#cPct').value)||0,
-    penjualan: quotPenjualan(q), modal: quotModal(q),
-    laba: quotPenjualan(q) - quotModal(q),
-    komisi: Number($('#prevKomisi').textContent.replace(/[^0-9]/g,''))||0,
-    note: $('#cNote').value, savedAt: new Date().toISOString()
-  };
-  state.commissions.unshift(data);
-  saveComm(); updateKPI();
-  toast('Komisi disimpan · ' + data.invoice);
-});
-$('#btnPrintComm').addEventListener('click', () => {
-  const qid = $('#cQuotSel').value;
-  const q = state.quotations.find(x => x.id === qid);
-  const data = {
-    invoice: q ? (q.no || '—') : '—',
-    po: q ? (q.date || '—') : '—',
-    sales: $('#cSales').value || '—', customer: q ? (q.customer || '—') : '—',
-    penjualan: $('#prevNilai').textContent,
-    modal: $('#prevModal').textContent,
-    dasar: $('#prevDasar').textContent, pct: $('#cPct').value + '%',
-    komisi: $('#prevKomisi').textContent, note: $('#cNote').value || '-'
-  };
-  const html = `
-    <div class="paper">
-      <div class="head">
-        <img src="${$('#qfLogoPreview').src}" />
-        <div><h2>PT. SIGMA AGUNG LUBRITAMA</h2><p>Laporan Komisi Sales</p></div>
-      </div>
-      <table class="qtable" style="margin-top:8px">
-        <tr><td style="width:35%;background:#f1f5f9"><b>Sales</b></td><td>${escHTML(data.sales)}</td></tr>
-        <tr><td style="background:#f1f5f9"><b>Customer</b></td><td>${escHTML(data.customer)}</td></tr>
-        <tr><td style="background:#f1f5f9"><b>Penjualan</b></td><td>${data.penjualan}</td></tr>
-        <tr><td style="background:#f1f5f9"><b>Modal</b></td><td>${data.modal}</td></tr>
-        <tr><td style="background:#f1f5f9"><b>Laba (Penjualan − Modal)</b></td><td>${data.dasar}</td></tr>
-        <tr><td style="background:#f1f5f9"><b>Persentase</b></td><td>${data.pct}</td></tr>
-        <tr><td style="background:#0b1e3f;color:#fff"><b>Total Komisi</b></td><td style="background:#0b1e3f;color:#fff"><b>${data.komisi}</b></td></tr>
-        <tr><td style="background:#f1f5f9"><b>Catatan</b></td><td>${escHTML(data.note)}</td></tr>
-      </table>
-      <div class="sign-row">
-        <div class="sign-col"></div>
-        <div class="sign-col right">
-          <div class="label">Disetujui Oleh,</div>
-          <div class="ptname">PT. SIGMA AGUNG LUBRITAMA</div>
-          <div style="height:60px"></div>
-          <div class="signer">Budi Santoso</div>
-          <div class="position">Sales Manager</div>
-        </div>
-      </div>
-      <div class="footer">
-        <b>PT. SIGMA AGUNG LUBRITAMA</b> · Kompleks Ruko Kalideres Indah, Jl. Peta Selatan Blok B No. 17, Jakarta Barat 11840<br/>
-        Telp. (021) 5446714, 5446715 · WhatsApp 0812-1000-2233
-      </div>
-    </div>
-  `;
-  $('#printArea').innerHTML = html;
-  $('#printArea').classList.remove('hidden');
-  window.print();
-  setTimeout(() => $('#printArea').classList.add('hidden'), 500);
-});
-
 /* ===================== INIT ===================== */
 function init(){
   load();
@@ -3958,7 +3781,6 @@ function init(){
       const adEl = document.getElementById('qfAddr'); if (adEl && savedQ.addr){ adEl.value = savedQ.addr; autoFitTextarea(adEl); }
     }
   }
-  calcCommission();
   updateKPI();
   go('home');
 }
